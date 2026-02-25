@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EXTREME EPIC KUIS</title>
+
+<style>
+body {
+    font-family: Arial;
+    margin: 0;
+    background: linear-gradient(135deg, #ff9966, #ff5e62);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+.card {
+    background: white;
+    width: 95%;
+    max-width: 650px;
+    padding: 25px;
+    border-radius: 15px;
+}
+button {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: #ff5e62;
+    color: white;
+    font-size: 16px;
+    margin-top: 10px;
+}
+.option {
+    background: #f1f1f1;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 8px 0;
+    cursor: pointer;
+}
+.timer { text-align:center; font-weight:bold; color:red; }
+.progress { height:10px; background:#eee; border-radius:10px; }
+.bar { height:10px; background:#ff5e62; border-radius:10px; width:0%; }
+input { width:100%; padding:10px; margin-top:8px; }
+</style>
+</head>
+
+<body>
+
+<div class="card" id="app">
+    <h2>EXTREME EPIC KUIS 🚀😎</h2>
+    <button onclick="login()">Mulai</button>
+</div>
+
+<script>
+
+const WEBHOOK = "PASTE_URL_APPS_SCRIPT_DI_SINI";
+
+let waktu = 300;
+let timerInterval;
+
+const bankSoal = [
+ {q:"Tegese tembung guyub yaiku…",o:["urip dhewe","semangat bebarengan","padudon","sengit"],a:1},
+ {q:"Tegese tembung rukun yaiku…",o:["tukar padu","urip salaras","nesu","bubrah"],a:1},
+ {q:"Tuladha guyub rukun yaiku…",o:["padu","gotong royong","rame dhewe","nesu"],a:1},
+ {q:"Geguritan iku karya sastra…",o:["drama","puisi","prosa","dialog"],a:1},
+ {q:"Ngirit tegese…",o:["boros","hemat","rusak","akeh"],a:1}
+];
+
+let soal = [];
+let index = 0;
+let skor = 0;
+let nama = "";
+let kelas = "";
+
+function acak(arr){ return arr.sort(()=>Math.random()-0.5); }
+
+function login(){
+    document.getElementById("app").innerHTML = `
+        <h3>Login Siswa</h3>
+        <input id="nama" placeholder="Nama">
+        <input id="kelas" placeholder="Kelas">
+        <button onclick="mulai()">Masuk Kuis</button>
+    `;
+}
+
+function mulai(){
+    nama = document.getElementById("nama").value;
+    kelas = document.getElementById("kelas").value;
+
+    if(!nama || !kelas) return alert("Lengkapi data!");
+
+    soal = acak([...bankSoal]);
+    index = 0;
+    skor = 0;
+    waktu = 300;
+
+    startTimer();
+    showSoal();
+}
+
+function startTimer(){
+    timerInterval = setInterval(()=>{
+        waktu--;
+        if(waktu <= 0) finish();
+        updateTimer();
+    },1000);
+}
+
+function updateTimer(){
+    const m = Math.floor(waktu/60);
+    const d = waktu%60;
+    document.getElementById("timer").innerText = `⏳ ${m}:${d.toString().padStart(2,'0')}`;
+}
+
+function showSoal(){
+    let s = soal[index];
+    let opsi = s.o.map((opt,i)=>
+        `<div class="option" onclick="jawab(${i})">${opt}</div>`
+    ).join("");
+
+    document.getElementById("app").innerHTML = `
+        <div class="timer" id="timer"></div>
+        <div class="progress"><div class="bar" id="bar"></div></div>
+        <h3>Soal ${index+1}</h3>
+        <p>${s.q}</p>
+        ${opsi}
+    `;
+
+    updateTimer();
+    document.getElementById("bar").style.width = `${(index/soal.length)*100}%`;
+}
+
+function jawab(p){
+    if(p === soal[index].a) skor++;
+    index++;
+
+    if(index < soal.length) showSoal();
+    else finish();
+}
+
+function finish(){
+    clearInterval(timerInterval);
+
+    kirimNilai();
+
+    document.getElementById("app").innerHTML = `
+        <h2>Selesai 😎</h2>
+        <p>${nama} (${kelas})</p>
+        <p>Skor: <b>${skor}</b></p>
+        <button onclick="location.reload()">Main maneh</button>
+    `;
+}
+
+function kirimNilai(){
+    fetch(WEBHOOK,{
+        method:"POST",
+        body: JSON.stringify({nama, kelas, skor})
+    });
+}
+
+</script>
+</body>
+</html>
